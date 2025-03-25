@@ -14,11 +14,17 @@ app.post("/scrape", async (req, res) => {
 
     try {
         // Use Puppeteer with a system-installed Chromium
-        const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/chromium-browser", // Use Render's system-installed Chrome
-            headless: true,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        });
+     const browser = await puppeteer.launch({
+    executablePath: "/usr/bin/google-chrome-stable",
+    headless: true,
+    args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+    ],
+});
+
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "domcontentloaded" });
