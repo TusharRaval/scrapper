@@ -1,5 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 const cors = require("cors");
 
 const app = express();
@@ -13,7 +13,13 @@ app.post("/scrape", async (req, res) => {
     }
 
     try {
-        const browser = await puppeteer.launch({ headless: true });
+        // Use Puppeteer with a system-installed Chromium
+        const browser = await puppeteer.launch({
+            executablePath: "/usr/bin/chromium-browser", // Use Render's system-installed Chrome
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
+
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: "domcontentloaded" });
 
@@ -22,7 +28,6 @@ app.post("/scrape", async (req, res) => {
             const getImages = (selector) =>
                 [...document.querySelectorAll(selector)].map((img) => img.src);
 
-            // Extract multiple reviews
             const getReviews = () => {
                 return [...document.querySelectorAll(".review-text-content span")].map(review => review.innerText.trim());
             };
@@ -39,16 +44,18 @@ app.post("/scrape", async (req, res) => {
                 productImages: getImages("#imgTagWrapperId img"),
                 manufacturerImages: getImages("#aplus"),
                 aiReviewSummary: getText(".a-section.a-spacing-medium"), // AI-generated summary
-                reviews: getReviews() // Extract all reviews
+                reviews: getReviews(), // Extract all reviews
             };
         });
 
         await browser.close();
         res.json(result);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Scraping error:", error);
+        res.status(500).json({ error: "Failed to scrape data", details: error.message });
     }
 });
 
-const PORT = 5000;
+// Use Render's PORT or default to 5000
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
